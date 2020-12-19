@@ -1,2 +1,2 @@
-# api.39alpharesearch.org
+# 39api
 39Alpha's backend API server

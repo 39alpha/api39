@@ -2,6 +2,7 @@ package config
 
 import (
 	"context"
+	"github.com/39alpha/api39/auth"
 	"net/http"
 )
 
@@ -21,5 +22,7 @@ func NewWithConfig(filename string, handler http.Handler) (*WithConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &WithConfig{cfg, handler}, nil
+
+	authed := auth.NewEnsureAuth(cfg.Apikey, handler)
+	return &WithConfig{cfg, authed}, nil
 }

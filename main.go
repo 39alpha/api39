@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"github.com/39alpha/api39/config"
@@ -25,25 +24,6 @@ func init() {
 	flag.StringVar(&configpath, "config", configpath, "path to configuration file (required)")
 }
 
-type WithConfig struct {
-	cfg     *config.Config
-	handler http.Handler
-}
-
-func (wc *WithConfig) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	ctx := context.WithValue(req.Context(), "config", wc.cfg)
-	reqWithCfg := req.WithContext(ctx)
-	wc.handler.ServeHTTP(w, reqWithCfg)
-}
-
-func NewWithConfig(filename string, handler http.Handler) (*WithConfig, error) {
-	cfg, err := config.ReadConfig(configpath)
-	if err != nil {
-		return nil, err
-	}
-	return &WithConfig{cfg, handler}, nil
-}
-
 func main() {
 	flag.Parse()
 
@@ -63,7 +43,7 @@ func main() {
 		mux := http.NewServeMux()
 		mux.HandleFunc("/api/v0/site/update", site.Update)
 
-		api, err := NewWithConfig(configpath, mux)
+		api, err := config.NewWithConfig(configpath, mux)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)

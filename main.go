@@ -1,55 +1,75 @@
 package main
 
 import (
-	"crypto/rand"
+	"context"
 	"flag"
 	"fmt"
+	"github.com/39alpha/api39/config"
 	"github.com/39alpha/api39/site"
 	"log"
 	"net/http"
+	"os"
 )
 
 const apikeylen = 64
 
 var (
-	port   = 3964
-	genkey = false
+	port       = 3964
+	genconf    = false
+	configpath = ""
 )
 
 func init() {
 	flag.IntVar(&port, "port", port, "port on which the server will listen")
-	flag.BoolVar(&genkey, "genkey", genkey, "generate and print a random API key to STDOUT and exit")
+	flag.BoolVar(&genconf, "genconf", genconf, "generate and print a configuration file to STDOUT and exit")
+	flag.StringVar(&configpath, "config", configpath, "path to configuration file (required)")
 }
 
-func generateApiKey() (string, error) {
-	chars := [64]byte{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k',
-		'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y',
-		'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-		'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '+',
-		'/'}
+type WithConfig struct {
+	cfg     *config.Config
+	handler http.Handler
+}
 
-	key := make([]byte, apikeylen)
-	if _, err := rand.Read(key); err != nil {
-		return "", err
+func (wc *WithConfig) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	ctx := context.WithValue(req.Context(), "config", wc.cfg)
+	reqWithCfg := req.WithContext(ctx)
+	wc.handler.ServeHTTP(w, reqWithCfg)
+}
+
+func NewWithConfig(filename string, handler http.Handler) (*WithConfig, error) {
+	cfg, err := config.ReadConfig(configpath)
+	if err != nil {
+		return nil, err
 	}
-	for i, x := range key {
-		key[i] = chars[x%64]
-	}
-	return string(key), nil
+	return &WithConfig{cfg, handler}, nil
 }
 
 func main() {
 	flag.Parse()
 
-	if genkey {
-		apikey, err := generateApiKey()
+	if genconf {
+		err := config.GenerateConfig(apikeylen)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
 		}
-		fmt.Println(apikey)
 	} else {
+		if configpath == "" {
+			fmt.Fprintf(os.Stderr, "Error: -config flag is required\n\n")
+			flag.Usage()
+			os.Exit(1)
+		}
+
+		mux := http.NewServeMux()
+		mux.HandleFunc("/api/v0/site/update", site.Update)
+
+		api, err := NewWithConfig(configpath, mux)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+
 		addr := fmt.Sprintf(":%d", port)
-		http.HandleFunc("/api/v0/site/update", site.Update)
-		log.Fatal(http.ListenAndServe(addr, nil))
+		log.Fatal(http.ListenAndServe(addr, api))
 	}
 }

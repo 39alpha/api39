@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
+	"github.com/39alpha/api39/respond"
 	"net/http"
 )
 
@@ -36,16 +37,17 @@ type EnsureAuth struct {
 	handler http.Handler
 }
 
-func (ea *EnsureAuth) authenticate(req *http.Request) error {
+func (ea *EnsureAuth) authenticate(req *http.Request) *respond.ErrorResponse {
 	dec := json.NewDecoder(req.Body)
 
 	var auth Auth
 	if err := dec.Decode(&auth); err != nil {
-		return fmt.Errorf("cannot parse request body: %v", err)
+		message := fmt.Sprintf("cannot parse request body: %v", err)
+		return respond.NewErrorResponse(message, http.StatusBadRequest)
 	}
 
 	if auth.Apikey != ea.Apikey {
-		return fmt.Errorf("invalid api key")
+		return respond.NewErrorResponse("invalid api key", http.StatusUnauthorized)
 	}
 
 	return nil
@@ -53,7 +55,7 @@ func (ea *EnsureAuth) authenticate(req *http.Request) error {
 
 func (ea *EnsureAuth) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if err := ea.authenticate(req); err != nil {
-		fmt.Fprintf(w, "{ \"error\": %q }", err)
+		err.WriteTo(w)
 		return
 	}
 	ea.handler.ServeHTTP(w, req)

@@ -1,15 +1,15 @@
 package site
 
 import (
-	"fmt"
 	"github.com/39alpha/api39/config"
+	"github.com/39alpha/api39/respond"
 	"net/http"
 )
 
 func Update(w http.ResponseWriter, req *http.Request) {
 	if cfg, ok := req.Context().Value("config").(*config.Config); !ok {
-		fmt.Fprintf(w, "No configuration found\n")
+		respond.ServerError(w)
 	} else {
-		fmt.Fprintf(w, "Apikey: %q\n", cfg.Apikey)
+		respond.Respond(w, struct{ Apikey string }{cfg.Apikey})
 	}
 }

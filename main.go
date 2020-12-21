@@ -51,7 +51,7 @@ func main() {
 			app.UseGlobal(withConfig)
 		}
 
-		v0 := app.Party("/api/v0", api39.VerifyGithubSignature, api39.ParseBody)
+		v0 := app.Party("/api/v0", api39.RecordBody, api39.VerifyGithubSignature, api39.ParseBody)
 		{
 			v0.Post("/site/update", site.Update)
 		}

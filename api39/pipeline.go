@@ -5,9 +5,9 @@ import (
 	"github.com/kataras/iris/v12"
 )
 
-func Pipeline(app *iris.Application, cfgfile string) error {
-
-	return nil
+func RecordBody(ctx iris.Context) {
+	ctx.RecordRequestBody(true)
+	ctx.Next()
 }
 
 func NewWithConfig(cfgfile string) (iris.Handler, error) {
@@ -29,9 +29,7 @@ func ParseBody(ctx iris.Context) {
 
 		var parsed iris.Map
 		if err := json.Unmarshal(body, &parsed); err != nil {
-			ctx.StopWithJSON(iris.StatusBadRequest, iris.Map{
-				"error": "failed to parse request body",
-			})
+			ctx.StopWithError(iris.StatusBadRequest, err)
 			return
 		} else {
 			ctx.Values().Set("JSONBody", parsed)

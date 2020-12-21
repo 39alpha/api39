@@ -11,7 +11,7 @@ import (
 	"os"
 )
 
-const apikeylen = 64
+const apikeylen = 32
 
 var (
 	port       = 3964
@@ -45,16 +45,17 @@ func main() {
 
 		app.UseRouter(recover.New())
 
-		if err := api39.Pipeline(app, configpath); err != nil {
+		if withConfig, err := api39.NewWithConfig(configpath); err != nil {
 			log.Fatal(err)
+		} else {
+			app.UseGlobal(withConfig)
 		}
 
-		v0 := app.Party("/api/v0")
+		v0 := app.Party("/api/v0", api39.VerifyGithubSignature, api39.ParseBody)
 		{
 			v0.Post("/site/update", site.Update)
 		}
 
-		addr := fmt.Sprintf(":%d", port)
-		app.Listen(addr)
+		app.Listen(fmt.Sprintf(":%d", port))
 	}
 }

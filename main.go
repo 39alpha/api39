@@ -3,10 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/39alpha/api39/config"
-	"github.com/39alpha/api39/site"
+	"github.com/39alpha/api39/api39"
+	"github.com/39alpha/api39/api39/site"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/middleware/recover"
 	"log"
-	"net/http"
 	"os"
 )
 
@@ -28,7 +29,7 @@ func main() {
 	flag.Parse()
 
 	if genconf {
-		err := config.GenerateConfig(apikeylen)
+		err := api39.GenerateConfig(apikeylen)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
@@ -40,16 +41,20 @@ func main() {
 			os.Exit(1)
 		}
 
-		mux := http.NewServeMux()
-		mux.HandleFunc("/api/v0/site/update", site.Update)
+		app := iris.New()
 
-		api, err := config.NewWithConfig(configpath, mux)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
+		app.UseRouter(recover.New())
+
+		if err := api39.Pipeline(app, configpath); err != nil {
+			log.Fatal(err)
+		}
+
+		v0 := app.Party("/api/v0")
+		{
+			v0.Post("/site/update", site.Update)
 		}
 
 		addr := fmt.Sprintf(":%d", port)
-		log.Fatal(http.ListenAndServe(addr, api))
+		app.Listen(addr)
 	}
 }

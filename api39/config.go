@@ -1,8 +1,7 @@
-package config
+package api39
 
 import (
 	"encoding/json"
-	"github.com/39alpha/api39/auth"
 	"io/ioutil"
 	"os"
 )
@@ -28,7 +27,7 @@ func ReadConfig(filename string) (*Config, error) {
 }
 
 func GenerateConfig(n int) error {
-	apikey, err := auth.GenerateApiKey(n)
+	apikey, err := GenerateApiKey(n)
 	if err != nil {
 		return err
 	}

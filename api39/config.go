@@ -6,9 +6,15 @@ import (
 	"os"
 )
 
+type SiteConfig struct {
+	Repo string `json:"repo"`
+	Path string `json:"path"`
+}
+
 type Config struct {
-	Filename string `json:"-"`
-	Apikey   string `json:"apikey"`
+	Filename string     `json:"-"`
+	Apikey   string     `json:"apikey"`
+	Site     SiteConfig `json:"site"`
 }
 
 func ReadConfig(filename string) (*Config, error) {
@@ -32,7 +38,12 @@ func GenerateConfig(n int) error {
 		return err
 	}
 
+	site := SiteConfig{
+		"https://github.com/39alpha/39alpharesearch.org",
+		"",
+	}
+
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "  ")
-	return enc.Encode(Config{"", apikey})
+	return enc.Encode(Config{"", apikey, site})
 }

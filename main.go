@@ -17,14 +17,12 @@ var (
 	port       = 3964
 	genconf    = false
 	configpath = ""
-	gitbox     = false
 )
 
 func init() {
 	flag.IntVar(&port, "port", port, "port on which the server will listen")
 	flag.BoolVar(&genconf, "genconf", genconf, "generate and print a configuration file to STDOUT and exit")
 	flag.StringVar(&configpath, "config", configpath, "path to configuration file (required)")
-	flag.BoolVar(&gitbox, "gitbox", gitbox, "fiddling with git2go")
 }
 
 func main() {
@@ -35,21 +33,6 @@ func main() {
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
-		}
-	} else if gitbox {
-		if configpath == "" {
-			fmt.Fprintf(os.Stderr, "Error: -config flag is required\n\n")
-			flag.Usage()
-			os.Exit(1)
-		}
-
-		cfg, err := api39.ReadConfig(configpath)
-		if err != nil {
-			log.Fatalf("Failed to read configuration: %v\n", err)
-		}
-
-		if err = api39.UpdateGitRepo(cfg.Site.Repo, cfg.Site.Path); err != nil {
-			log.Fatalf("Failed to Update Repo: %v\n", err)
 		}
 	} else {
 		if configpath == "" {

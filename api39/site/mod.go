@@ -40,7 +40,7 @@ func Update(ctx iris.Context) {
 			return
 		}
 
-		if err := api39.RebuildWithHugo(cfg.Site.Hugo, cfg.Site.Path); err != nil {
+		if err := api39.RebuildWithMake(cfg.Site.Path); err != nil {
 			message := "failed to rebuild site"
 			log.Printf("%s: %v\n", message, err)
 			ctx.StopWithJSON(iris.StatusInternalServerError, iris.Map{

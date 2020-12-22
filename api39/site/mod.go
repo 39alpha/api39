@@ -5,7 +5,7 @@ import (
 	"github.com/39alpha/api39/api39"
 	"github.com/kataras/iris/v12"
 	"log"
-	"os"
+	"path/filepath"
 )
 
 func Update(ctx iris.Context) {
@@ -16,38 +16,53 @@ func Update(ctx iris.Context) {
 
 	if ref, ok := body["ref"]; !ok {
 		log.Println("Request Recieved: no reference key")
+		_, _ = ctx.JSON(iris.Map{"message": "successful request"})
 	} else if ref.(string) != "refs/heads/main" {
 		log.Printf("Request Recieved: branch is not main (%v)\n", ref.(string))
+		_, _ = ctx.JSON(iris.Map{"message": "successful request"})
 	} else {
 		cfg, ok := ctx.Values().Get("config").(*api39.Config)
 		if !ok {
-			log.Println("Failed to retrieve configuration from context")
+			log.Println("failed to retrieve configuration from context")
 			ctx.StopWithJSON(iris.StatusInternalServerError, iris.Map{
-				"error": "an error occurred while loading site configuration",
+				"message": "failed to retrieve configuration from context",
 			})
 			return
 		}
 
 		if err := api39.UpdateGitRepo(cfg.Site.Repo, cfg.Site.Path); err != nil {
-			log.Printf("Failed to update repository: %v\n", err)
+			message := "failed to update repository"
+			log.Printf("%s: %v\n", message, err)
 			ctx.StopWithJSON(iris.StatusInternalServerError, iris.Map{
-				"message": "failed to update repository",
+				"message": message,
 				"error":   err,
 			})
 			return
 		}
 
 		if err := api39.RebuildWithHugo(cfg.Site.Hugo, cfg.Site.Path); err != nil {
-			log.Printf("Failed to rebuild site: %v\n", err)
+			message := "failed to rebuild site"
+			log.Printf("%s: %v\n", message, err)
 			ctx.StopWithJSON(iris.StatusInternalServerError, iris.Map{
-				"message": "failed to rebuild site",
+				"message": message,
 				"error":   err,
 			})
 			return
 		}
-		cwd, _ := os.Getwd()
-		log.Printf("Working Directory: %v\n", cwd)
-	}
 
-	ctx.JSON(iris.Map{"message": "successful request"})
+		path := filepath.Join(cfg.Site.Path, "public")
+		hash, err := api39.IpfsAddDir(cfg.Ipfs.Url, path)
+		if err != nil {
+			message := "failed to add site to IPFS"
+			log.Printf("%s: %v\n", message, err)
+			ctx.StopWithJSON(iris.StatusInternalServerError, iris.Map{
+				"message": message,
+				"error":   err,
+			})
+			return
+		}
+
+		log.Printf("New IPFS Hash: %s\n", hash)
+		_, _ = ctx.JSON(iris.Map{"message": "successful request", "hash": hash})
+	}
 }

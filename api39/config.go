@@ -13,10 +13,15 @@ type SiteConfig struct {
 	Hugo string `json:"hugo"`
 }
 
+type IpfsConfig struct {
+	Url string `json:"url"`
+}
+
 type Config struct {
 	Filename string     `json:"-"`
 	Apikey   string     `json:"apikey"`
 	Site     SiteConfig `json:"site"`
+	Ipfs     IpfsConfig `json:"ipfs"`
 }
 
 func ReadConfig(filename string) (*Config, error) {
@@ -51,7 +56,9 @@ func GenerateConfig(n int) error {
 		hugopath,
 	}
 
+	ipfs := IpfsConfig{"127.0.0.1:5001"}
+
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "  ")
-	return enc.Encode(Config{"", apikey, site})
+	return enc.Encode(Config{"", apikey, site, ipfs})
 }

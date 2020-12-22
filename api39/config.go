@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
+	"os/exec"
 )
 
 type SiteConfig struct {
 	Repo string `json:"repo"`
 	Path string `json:"path"`
+	Hugo string `json:"hugo"`
 }
 
 type Config struct {
@@ -38,9 +40,15 @@ func GenerateConfig(n int) error {
 		return err
 	}
 
+	hugopath, err := exec.LookPath("hugo")
+	if err != nil {
+		hugopath = ""
+	}
+
 	site := SiteConfig{
 		"https://github.com/39alpha/39alpharesearch.org",
 		"",
+		hugopath,
 	}
 
 	enc := json.NewEncoder(os.Stdout)

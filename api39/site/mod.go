@@ -5,6 +5,7 @@ import (
 	"github.com/39alpha/api39/api39"
 	"github.com/kataras/iris/v12"
 	"log"
+	"os"
 )
 
 func Update(ctx iris.Context) {
@@ -35,6 +36,17 @@ func Update(ctx iris.Context) {
 			})
 			return
 		}
+
+		if err := api39.RebuildWithHugo(cfg.Site.Hugo, cfg.Site.Path); err != nil {
+			log.Printf("Failed to rebuild site: %v\n", err)
+			ctx.StopWithJSON(iris.StatusInternalServerError, iris.Map{
+				"message": "failed to rebuild site",
+				"error":   err,
+			})
+			return
+		}
+		cwd, _ := os.Getwd()
+		log.Printf("Working Directory: %v\n", cwd)
 	}
 
 	ctx.JSON(iris.Map{"message": "successful request"})

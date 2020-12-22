@@ -37,9 +37,18 @@ func main() {
 			os.Exit(1)
 		}
 	} else if gitbox {
-		remote := "https://github.com/39alpha/39alpharesearch.org"
-		path := "/home/dgm/website"
-		if err := api39.UpdateGitRepo(remote, path); err != nil {
+		if configpath == "" {
+			fmt.Fprintf(os.Stderr, "Error: -config flag is required\n\n")
+			flag.Usage()
+			os.Exit(1)
+		}
+
+		cfg, err := api39.ReadConfig(configpath)
+		if err != nil {
+			log.Fatalf("Failed to read configuration: %v\n", err)
+		}
+
+		if err = api39.UpdateGitRepo(cfg.Site.Repo, cfg.Site.Path); err != nil {
 			log.Fatalf("Failed to Update Repo: %v\n", err)
 		}
 	} else {

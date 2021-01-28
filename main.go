@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/39alpha/api39/api39"
+	"github.com/39alpha/api39/api39/donate"
 	"github.com/39alpha/api39/api39/site"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/middleware/recover"
@@ -51,9 +52,13 @@ func main() {
 			app.UseGlobal(withConfig)
 		}
 
-		v0 := app.Party("/api/v0", api39.RecordBody, api39.VerifyGithubSignature, api39.ParseBody)
+		v0 := app.Party("/api/v0", api39.RecordBody)
 		{
-			v0.Post("/site/update", site.Update)
+			v0.Post("/site/update", api39.VerifyGithubSignature, api39.ParseBody, site.Update)
+			donations := v0.Party("/donate")
+			{
+				donations.Post("/checkout", api39.ParseBody, donate.Checkout)
+			}
 		}
 
 		app.Listen(fmt.Sprintf(":%d", port))

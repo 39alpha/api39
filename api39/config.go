@@ -7,6 +7,12 @@ import (
 	"os/exec"
 )
 
+type StripeConfig struct {
+	Apikey   string `json:"apikey"`
+	Currency string `json:"currency"`
+	Product  string `json:"product"`
+}
+
 type SiteConfig struct {
 	Repo string `json:"repo"`
 	Path string `json:"path"`
@@ -18,10 +24,11 @@ type IpfsConfig struct {
 }
 
 type Config struct {
-	Filename string     `json:"-"`
-	Apikey   string     `json:"apikey"`
-	Site     SiteConfig `json:"site"`
-	Ipfs     IpfsConfig `json:"ipfs"`
+	Filename string       `json:"-"`
+	Apikey   string       `json:"apikey"`
+	Site     SiteConfig   `json:"site"`
+	Ipfs     IpfsConfig   `json:"ipfs"`
+	Stripe   StripeConfig `json:"stripe"`
 }
 
 func ReadConfig(filename string) (*Config, error) {
@@ -56,9 +63,11 @@ func GenerateConfig(n int) error {
 		hugopath,
 	}
 
+	stripe := StripeConfig{"", "usd", "Your Generous Donation"}
+
 	ipfs := IpfsConfig{"127.0.0.1:5001"}
 
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "  ")
-	return enc.Encode(Config{"", apikey, site, ipfs})
+	return enc.Encode(Config{"", apikey, site, ipfs, stripe})
 }

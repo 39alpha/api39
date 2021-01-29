@@ -8,9 +8,11 @@ import (
 )
 
 type StripeConfig struct {
-	Apikey   string `json:"apikey"`
-	Currency string `json:"currency"`
-	Product  string `json:"product"`
+	Apikey     string `json:"apikey"`
+	Currency   string `json:"currency"`
+	Product    string `json:"product"`
+	SuccessURL string `json:"success"`
+	CancelURL  string `json:"cancel"`
 }
 
 type SiteConfig struct {
@@ -63,7 +65,13 @@ func GenerateConfig(n int) error {
 		hugopath,
 	}
 
-	stripe := StripeConfig{"", "usd", "Your Generous Donation"}
+	stripe := StripeConfig{
+		"",
+		"usd",
+		"Your Generous Donation",
+		"https://39alpharesearch.org/donate/success",
+		"https://39alpharesearch.org/donate",
+	}
 
 	ipfs := IpfsConfig{"127.0.0.1:5001"}
 

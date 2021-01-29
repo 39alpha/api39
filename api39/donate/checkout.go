@@ -89,8 +89,8 @@ func Checkout(ctx iris.Context) {
 				Quantity: stripe.Int64(1),
 			},
 		},
-		SuccessURL: stripe.String("https://dev.39alpharesearch.org/donate/success"),
-		CancelURL:  stripe.String("https://dev.39alpharesearch.org/donate"),
+		SuccessURL: stripe.String(cfg.Stripe.SuccessURL),
+		CancelURL:  stripe.String(cfg.Stripe.CancelURL),
 	}
 
 	session, err := session.New(params)

@@ -47,7 +47,7 @@ func Checkout(ctx iris.Context) {
 		return
 	}
 
-	if req.UnitAmount <= 1.0 {
+	if req.UnitAmount < 1.0 {
 		ctx.StopWithProblem(iris.StatusBadRequest, iris.NewProblem().
 			Title("invalid unit_amount").
 			Type("amount-too-low"))

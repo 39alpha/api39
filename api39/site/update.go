@@ -63,6 +63,6 @@ func Update(ctx iris.Context) {
 		}
 
 		log.Printf("New IPFS Hash: %s\n", hash)
-		_, _ = ctx.JSON(iris.Map{"message": "successful request", "hash": hash})
+		_, _ = ctx.JSON(iris.Map{"message": "successful", "hash": hash})
 	}
 }

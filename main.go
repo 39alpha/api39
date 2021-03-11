@@ -55,6 +55,7 @@ func main() {
 		v0 := app.Party("/api/v0", api39.RecordBody)
 		{
 			v0.Post("/site/update", api39.VerifyGithubSignature, api39.ParseBody, site.Update)
+			v0.Get("/ipfs/addr", api39.Addr)
 			donations := v0.Party("/donate")
 			{
 				donations.Post("/checkout", api39.ParseBody, donate.Checkout)

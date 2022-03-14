@@ -6,6 +6,7 @@ import (
 	"github.com/39alpha/api39/api39"
 	"github.com/39alpha/api39/api39/donate"
 	"github.com/39alpha/api39/api39/site"
+	"github.com/39alpha/api39/api39/survey"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/middleware/recover"
 	"log"
@@ -59,6 +60,11 @@ func main() {
 			donations := v0.Party("/donate")
 			{
 				donations.Post("/checkout", api39.ParseBody, donate.Checkout)
+			}
+			surveys := v0.Party("/survey", survey.OpenDatabase)
+			{
+				surveys.Get("/", survey.ListSurveys)
+				surveys.Get("/{id}", survey.GetSurvey)
 			}
 		}
 

@@ -11,5 +11,6 @@ require (
 	github.com/mattn/go-colorable v0.1.8 // indirect
 	github.com/smartystreets/goconvey v1.6.4 // indirect
 	github.com/stripe/stripe-go/v72 v72.28.0
+	github.com/upper/db/v4 v4.5.2 // indirect
 	github.com/yudai/pp v2.0.1+incompatible // indirect
 )

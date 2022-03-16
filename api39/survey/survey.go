@@ -1,43 +1,18 @@
 package survey
 
 import (
+	"fmt"
 	"github.com/kataras/iris/v12"
 	"github.com/upper/db/v4"
 	"github.com/upper/db/v4/adapter/sqlite"
 )
-
-type Survey struct {
-	Id string `db:"id,omitempty"`
-	Title string `db:"title"`
-	Description string `db:"description"`
-}
-
-type Question struct {
-	Id int `db:"id,omitempty"`
-	Type string `db:type`
-	Statement string `db:"statement"`
-		SurveyId string `db:"survey_id"`
-}
-
-type Answer struct {
-	Id int `db:"id,omitempty"`
-	Answer string `db:"answer"`
-		QuestionId int `db:"question_id"`
-}
-
-type Response struct {
-	Id int `db:"id,omitempty"`
-	SurveyId string `db:"survey_id"`
-	QuestionId string `db:"question_id"`
-	Answer string `db:"answer"`
-}
 
 func OpenDatabase(ctx iris.Context) {
 	settings := sqlite.ConnectionURL{
 		Database: `surveys.db`,
 	}
 
-	db, err := sqlite.Open(settings)
+	sess, err := sqlite.Open(settings)
 	if err != nil {
 		ctx.StopWithJSON(iris.StatusInternalServerError, iris.Map{
 			"error": "cannot open survey database",
@@ -45,12 +20,12 @@ func OpenDatabase(ctx iris.Context) {
 		return
 	}
 
-	ctx.Values().Set("surveydb", db)
+	ctx.Values().Set("db_session", sess)
 	ctx.Next()
 }
 
 func ListSurveys(ctx iris.Context) {
-	sess, ok := ctx.Values().Get("surveydb").(db.Session)
+	sess, ok := ctx.Values().Get("db_session").(db.Session)
 	if !ok {
 		ctx.StopWithJSON(iris.StatusInternalServerError, iris.Map{
 			"error": "no database loaded",
@@ -58,26 +33,20 @@ func ListSurveys(ctx iris.Context) {
 		return
 	}
 
-	surveyCollection := sess.Collection("survey")
-	res := surveyCollection.Find()
-	var surveys []Survey
-	if err := res.All(&surveys); err != nil {
+	var ids []iris.Map
+	if err := sess.SQL().Select("id").From("survey").Iterator().All(&ids); err != nil {
 		ctx.StopWithJSON(iris.StatusInternalServerError, iris.Map{
 			"error": "failed to get surveys",
 		})
 		return
 	}
 
-	var ids []iris.Map
-	for _, survey := range surveys {
-		ids = append(ids, iris.Map{ "id": survey.Id })
-	}
 	_, _ = ctx.JSON(iris.Map{"surveys": ids})
 }
 
 func GetSurvey(ctx iris.Context) {
 	survey_id := ctx.Params().Get("id")
-	sess, ok := ctx.Values().Get("surveydb").(db.Session)
+	sess, ok := ctx.Values().Get("db_session").(db.Session)
 	if !ok {
 		ctx.StopWithJSON(iris.StatusInternalServerError, iris.Map{
 			"error": "no database loaded",
@@ -105,8 +74,8 @@ func GetSurvey(ctx iris.Context) {
 		OrderBy("s.id", "q.id", "a.id").
 		Iterator()
 
-	var results []map[string]interface {}
-	err := iter.All(&results);
+	var results []map[string]interface{}
+	err := iter.All(&results)
 	if err != nil {
 		ctx.StopWithJSON(iris.StatusInternalServerError, iris.Map{
 			"error": "failed to fetch survey",
@@ -115,16 +84,16 @@ func GetSurvey(ctx iris.Context) {
 	}
 	if len(results) == 0 {
 		ctx.StopWithJSON(iris.StatusNotFound, iris.Map{
-			"message": "no survey found",
+			"message": fmt.Sprintf("no survey found with id '%s'", survey_id),
 		})
 		return
 	}
 
 	survey := iris.Map{
-		"id": results[0]["survey_id"],
-		"title": results[0]["title"],
+		"id":          results[0]["survey_id"],
+		"title":       results[0]["title"],
 		"description": results[0]["description"],
-		"questions": make([]iris.Map, 0),
+		"questions":   make([]iris.Map, 0),
 	}
 
 	if results[0]["question_id"] != nil {
@@ -133,10 +102,10 @@ func GetSurvey(ctx iris.Context) {
 			question_id := row["question_id"]
 			if question["id"] == nil {
 				question = iris.Map{
-					"id": question_id,
-					"type": row["type"],
+					"id":        question_id,
+					"type":      row["type"],
 					"statement": row["statement"],
-					"answers": make([]string, 0),
+					"answers":   make([]string, 0),
 				}
 			} else if question["id"] != question_id {
 				survey["questions"] = append(
@@ -144,10 +113,10 @@ func GetSurvey(ctx iris.Context) {
 					question,
 				)
 				question = iris.Map{
-					"id": question_id,
-					"type": row["type"],
+					"id":        question_id,
+					"type":      row["type"],
 					"statement": row["statement"],
-					"answers": make([]string, 0),
+					"answers":   make([]string, 0),
 				}
 			}
 
@@ -166,6 +135,84 @@ func GetSurvey(ctx iris.Context) {
 			)
 		}
 	}
-			
+
 	_, _ = ctx.JSON(survey)
+}
+
+func PutSurveyResponses(ctx iris.Context) {
+	body, ok := ctx.Values().Get("JSONBody").(iris.Map)
+	if !ok {
+		ctx.StopWithError(iris.StatusBadRequest, fmt.Errorf("Bad request body"))
+		return
+	}
+
+	survey_id := ctx.Params().Get("id")
+	sess, ok := ctx.Values().Get("db_session").(db.Session)
+	if !ok {
+		ctx.StopWithJSON(iris.StatusInternalServerError, iris.Map{
+			"error": "no database loaded",
+		})
+		return
+	}
+
+	submission_id, err := addSubmission(sess, survey_id)
+	if err != nil {
+		ctx.StopWithJSON(iris.StatusInternalServerError, iris.Map{
+			"error":   "failed to get submission id",
+			"message": fmt.Sprintf("%v", err),
+		})
+	}
+
+	if responses, ok := body["responses"]; !ok {
+		ctx.StopWithJSON(iris.StatusBadRequest, iris.Map{
+			"message": "ill-formed response",
+		})
+		return
+	} else {
+		inserter := sess.SQL().
+			InsertInto("response").
+			Columns("submission_id", "question_id", "answer").
+			Batch(len(body))
+
+		for _, response := range responses.([]interface{}) {
+			entry := response.(iris.Map)
+			question_id := int(entry["question_id"].(float64))
+			answer := entry["answer"].(string)
+			inserter = inserter.Values(submission_id, question_id, answer)
+		}
+
+		inserter.Done()
+
+		if err := inserter.Wait(); err != nil {
+			ctx.StopWithJSON(iris.StatusInternalServerError, iris.Map{
+				"error":   "failed to insert the responses",
+				"message": fmt.Sprintf("%v", err),
+			})
+			return
+		}
+	}
+
+	_, _ = ctx.JSON(iris.Map{"message": "success"})
+}
+
+func addSubmission(sess db.Session, survey_id string) (int, error) {
+	rows, err := sess.SQL().
+		InsertInto("submission").
+		Columns("survey_id").
+		Values(survey_id).
+		Returning("id").
+		Query()
+
+	if err != nil {
+		return 0, nil
+	}
+	defer rows.Close()
+
+	var submission_id int
+	rows.Next()
+	if err := rows.Scan(&submission_id); err != nil {
+		return 0, err
+	}
+
+	return submission_id, nil
 }

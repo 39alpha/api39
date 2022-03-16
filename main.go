@@ -61,10 +61,11 @@ func main() {
 			{
 				donations.Post("/checkout", api39.ParseBody, donate.Checkout)
 			}
-			surveys := v0.Party("/survey", survey.OpenDatabase)
+			surveys := v0.Party("/surveys", survey.OpenDatabase)
 			{
 				surveys.Get("/", survey.ListSurveys)
 				surveys.Get("/{id}", survey.GetSurvey)
+				surveys.Put("/{id}/responses", api39.ParseBody, survey.PutSurveyResponses)
 			}
 		}
 

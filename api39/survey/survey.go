@@ -142,7 +142,7 @@ func GetSurvey(ctx iris.Context) {
 	_, _ = ctx.JSON(survey)
 }
 
-func PutSurveyResponses(ctx iris.Context) {
+func AddSurveyResponses(ctx iris.Context) {
 	body, ok := ctx.Values().Get("JSONBody").(iris.Map)
 	if !ok {
 		ctx.StopWithError(iris.StatusBadRequest, fmt.Errorf("Bad request body"))

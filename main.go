@@ -65,7 +65,7 @@ func main() {
 			{
 				surveys.Get("/", survey.ListSurveys)
 				surveys.Get("/{id}", survey.GetSurvey)
-				surveys.Put("/{id}/responses", api39.ParseBody, survey.PutSurveyResponses)
+				surveys.Post("/{id}/responses", api39.ParseBody, survey.AddSurveyResponses)
 			}
 		}
 

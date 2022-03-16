@@ -5,7 +5,7 @@ INSERT INTO `survey`(`id`, `title`, `description`) VALUES (
 );
 
 INSERT INTO `question`(`type`, `statement`, `survey_id`) VALUES
-('short-answer', 'What is your name?', 'f4a92aeee9f1d000'),
+('name', 'What is your name?', 'f4a92aeee9f1d000'),
 ('email', 'What is your email address?', 'f4a92aeee9f1d000'),
 ('multiple-choice', 'How old are you?', 'f4a92aeee9f1d000'),
 ('all-that-apply', 'What are your research field(s)?', 'f4a92aeee9f1d000'),

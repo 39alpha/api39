@@ -14,8 +14,8 @@ CREATE TABLE IF NOT EXISTS `question` (
 
 CREATE TABLE IF NOT EXISTS `answer` (
     `id` INTEGER PRIMARY KEY AUTOINCREMENT,
-    `answer` TEXT NOT NULL,
     `question_id` INTEGER NOT NULL,
+    `value` TEXT NOT NULL,
     FOREIGN KEY(`question_id`) REFERENCES `question`(`id`)
 );
 
@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS `response` (
     `id` INTEGER PRIMARY KEY AUTOINCREMENT,
     `submission_id` INTEGER NOT NULL,
     `question_id` INTEGER NOT NULL,
-    `answer` TEXT NOT NULL,
+    `response` TEXT NOT NULL,
     FOREIGN KEY(`submission_id`) REFERENCES `submission`(`id`),
     FOREIGN KEY(`question_id`) REFERENCES `question`(`id`)
 );

@@ -63,7 +63,7 @@ func GetSurvey(ctx iris.Context) {
 			"q.type as type",
 			"q.statement as statement",
 			"a.id as answer_id",
-			"a.answer as answer",
+			"a.value as value",
 		).
 		From("survey as s").
 		LeftJoin("question as q").
@@ -105,7 +105,7 @@ func GetSurvey(ctx iris.Context) {
 					"id":        question_id,
 					"type":      row["type"],
 					"statement": row["statement"],
-					"answers":   make([]string, 0),
+					"answers":   make([]iris.Map, 0),
 				}
 			} else if question["id"] != question_id {
 				survey["questions"] = append(
@@ -116,14 +116,17 @@ func GetSurvey(ctx iris.Context) {
 					"id":        question_id,
 					"type":      row["type"],
 					"statement": row["statement"],
-					"answers":   make([]string, 0),
+					"answers":   make([]iris.Map, 0),
 				}
 			}
 
-			if row["answer"] != nil {
+			if row["value"] != nil {
 				question["answers"] = append(
-					question["answers"].([]string),
-					row["answer"].(string),
+					question["answers"].([]iris.Map),
+					iris.Map{
+						"id": row["answer_id"],
+						"value": row["value"].(string),
+					},
 				)
 			}
 		}
@@ -155,41 +158,69 @@ func PutSurveyResponses(ctx iris.Context) {
 		return
 	}
 
-	submission_id, err := addSubmission(sess, survey_id)
-	if err != nil {
-		ctx.StopWithJSON(iris.StatusInternalServerError, iris.Map{
-			"error":   "failed to get submission id",
-			"message": fmt.Sprintf("%v", err),
-		})
-	}
-
-	if responses, ok := body["responses"]; !ok {
-		ctx.StopWithJSON(iris.StatusBadRequest, iris.Map{
-			"message": "ill-formed response",
-		})
-		return
-	} else {
-		inserter := sess.SQL().
-			InsertInto("response").
-			Columns("submission_id", "question_id", "answer").
-			Batch(len(body))
-
-		for _, response := range responses.([]interface{}) {
-			entry := response.(iris.Map)
-			question_id := int(entry["question_id"].(float64))
-			answer := entry["answer"].(string)
-			inserter = inserter.Values(submission_id, question_id, answer)
-		}
-
-		inserter.Done()
-
-		if err := inserter.Wait(); err != nil {
+	err := sess.Tx(func (sess db.Session) error {
+		submission_id, err := addSubmission(sess, survey_id)
+		if err != nil {
 			ctx.StopWithJSON(iris.StatusInternalServerError, iris.Map{
-				"error":   "failed to insert the responses",
+				"error":   "failed to get submission id",
 				"message": fmt.Sprintf("%v", err),
 			})
-			return
+			return err
 		}
+	
+		if content, ok := body["responses"]; !ok {
+			ctx.StopWithJSON(iris.StatusBadRequest, iris.Map{
+				"message": "ill-formed response",
+			})
+			return fmt.Errorf("ill-formed response")
+		} else if responses, ok := content.([]interface {}); !ok {
+			ctx.StopWithJSON(iris.StatusBadRequest, iris.Map{
+				"message": "ill-formed 'responses' field",
+			})
+			return fmt.Errorf("ill-formed 'responses' field")
+		} else {
+			inserter := sess.SQL().
+				InsertInto("response").
+				Columns("submission_id", "question_id", "response").
+				Batch(len(responses))
+	
+			for _, response := range responses {
+				if entry, ok := response.(iris.Map); !ok {
+					ctx.StopWithJSON(iris.StatusBadRequest, iris.Map{
+						"error": "ill-formed survey response",
+					})
+					return fmt.Errorf("ill-formed survey response")
+				} else if question_id, ok := entry["id"].(float64); !ok {
+					ctx.StopWithJSON(iris.StatusBadRequest, iris.Map{
+						"error": "ill-formed 'id' field in survey response",
+					})
+					return fmt.Errorf("ill-formed 'id' field in survey response")
+				} else if value, ok := entry["response"].(string); !ok {
+					ctx.StopWithJSON(iris.StatusBadRequest, iris.Map{
+						"error": "ill-formed 'response' field in survey response",
+					})
+					return fmt.Errorf("ill-formed 'response' field in survey response")
+				} else {
+					inserter = inserter.Values(submission_id, question_id, value)
+				}
+			}
+	
+			inserter.Done()
+	
+			if err := inserter.Wait(); err != nil {
+				ctx.StopWithJSON(iris.StatusInternalServerError, iris.Map{
+					"error":   "failed to insert the responses",
+					"message": fmt.Sprintf("%v", err),
+				})
+				return err
+			}
+		}
+
+		return nil
+	});
+
+	if err != nil {
+		return
 	}
 
 	_, _ = ctx.JSON(iris.Map{"message": "success"})

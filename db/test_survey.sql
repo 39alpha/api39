@@ -11,7 +11,7 @@ INSERT INTO `question`(`type`, `statement`, `survey_id`) VALUES
 ('all-that-apply', 'What are your research field(s)?', 'f4a92aeee9f1d000'),
 ('long-answer', 'What do you think?', 'f4a92aeee9f1d000');
 
-INSERT INTO `answer`(`question_id`, `answer`) VALUES
+INSERT INTO `answer`(`question_id`, `value`) VALUES
 (3, '<18'),
 (3, '18-35'),
 (3, 'old'),

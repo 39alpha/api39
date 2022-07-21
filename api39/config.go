@@ -25,12 +25,19 @@ type IpfsConfig struct {
 	Url string `json:"url"`
 }
 
+type GoDaddyConfig struct {
+	Key    string `json:"key"`
+	Secret string `json:"secret"`
+}
+
 type Config struct {
-	Filename string       `json:"-"`
-	Apikey   string       `json:"apikey"`
-	Site     SiteConfig   `json:"site"`
-	Ipfs     IpfsConfig   `json:"ipfs"`
-	Stripe   StripeConfig `json:"stripe"`
+	Filename string        `json:"-"`
+	Apikey   string        `json:"apikey"`
+	Domain   string        `json:"domain"`
+	Site     SiteConfig    `json:"site"`
+	Ipfs     IpfsConfig    `json:"ipfs"`
+	Stripe   StripeConfig  `json:"stripe"`
+	GoDaddy  GoDaddyConfig `json:"godaddy"`
 }
 
 func ReadConfig(filename string) (*Config, error) {
@@ -75,7 +82,18 @@ func GenerateConfig(n int) error {
 
 	ipfs := IpfsConfig{"127.0.0.1:5001"}
 
+	godaddy := GoDaddyConfig{"", ""}
+
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "  ")
-	return enc.Encode(Config{"", apikey, site, ipfs, stripe})
+	return enc.Encode(
+		Config{
+			"",
+			apikey,
+			"39alpharesearch.org",
+			site,
+			ipfs,
+			stripe,
+			godaddy,
+		})
 }

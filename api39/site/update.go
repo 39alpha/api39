@@ -20,7 +20,7 @@ func UpdateDNSLink(cfg *api39.Config, ipfshash string) error {
 	url := godaddyapi + cfg.Domain + "/records/TXT/_dnslink"
 
 	payload := []map[string]string{
-		map[string]string{ "data": "/ipfs/" + ipfshash },
+		map[string]string{ "data": "dnslink=/ipfs/" + ipfshash },
 	}
 	content, err := json.Marshal(payload)
 	if err != nil {

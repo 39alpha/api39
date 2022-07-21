@@ -1,6 +1,8 @@
 package site
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/39alpha/api39/api39"
 	"github.com/kataras/iris/v12"
@@ -8,14 +10,13 @@ import (
 	"net/http"
 	"path/filepath"
 	"time"
-	"encoding/json"
 )
 
 const (
-	godaddyapi := "https://api.godaddy.com/v1/domains/"
+	godaddyapi = "https://api.godaddy.com/v1/domains/"
 )
 
-func UpdateDNSLink(cfg api39.Config, ipfshash string) error {
+func UpdateDNSLink(cfg *api39.Config, ipfshash string) error {
 	url := godaddyapi + cfg.Domain + "/records/TXT/_dnslink"
 
 	payload := []map[string]string{
@@ -32,7 +33,7 @@ func UpdateDNSLink(cfg api39.Config, ipfshash string) error {
 	req, err := http.NewRequest(http.MethodPut, url, data)
 	req.Header.Add("accept", "application/json")
 	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", "sso-key " + key + ":" + secret)
+	req.Header.Add("Authorization", "sso-key " + cfg.GoDaddy.Key + ":" + cfg.GoDaddy.Secret)
 	fmt.Println(req.Header)
 	if err != nil {
 		return err;
@@ -104,7 +105,7 @@ func Update(ctx iris.Context) {
 
 		log.Printf("New IPFS Hash: %s\n", hash)
 
-		err = api39.UpdateDNSLink(cfg, hash)
+		err = UpdateDNSLink(cfg, hash)
 		if err != nil {
 			ctx.StopWithJSON(iris.StatusInternalServerError, iris.Map{
 				"message": "failed to update DNS settings",

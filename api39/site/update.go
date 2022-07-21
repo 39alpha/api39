@@ -5,8 +5,48 @@ import (
 	"github.com/39alpha/api39/api39"
 	"github.com/kataras/iris/v12"
 	"log"
+	"net/http"
 	"path/filepath"
+	"time"
+	"encoding/json"
 )
+
+const (
+	godaddyapi := "https://api.godaddy.com/v1/domains/"
+)
+
+func UpdateDNSLink(cfg api39.Config, ipfshash string) error {
+	url := godaddyapi + cfg.Domain + "/records/TXT/_dnslink"
+
+	payload := []map[string]string{
+		map[string]string{ "data": "/ipfs/" + ipfshash },
+	}
+	content, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	data := bytes.NewReader(content)
+
+	client := &http.Client{Timeout: 3 * time.Second}
+	req, err := http.NewRequest(http.MethodPut, url, data)
+	req.Header.Add("accept", "application/json")
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Authorization", "sso-key " + key + ":" + secret)
+	fmt.Println(req.Header)
+	if err != nil {
+		return err;
+	}
+
+	res, err := client.Do(req)
+	if err != nil {
+		return err
+	} else if res.StatusCode != 200 {
+		return fmt.Errorf("failed to set _dnslink (%s)", res.Status)
+	}
+
+	return nil;
+}
 
 func Update(ctx iris.Context) {
 	body, ok := ctx.Values().Get("JSONBody").(iris.Map)
@@ -63,6 +103,15 @@ func Update(ctx iris.Context) {
 		}
 
 		log.Printf("New IPFS Hash: %s\n", hash)
+
+		err = api39.UpdateDNSLink(cfg, hash)
+		if err != nil {
+			ctx.StopWithJSON(iris.StatusInternalServerError, iris.Map{
+				"message": "failed to update DNS settings",
+				"error": err,
+			})
+		}
+
 		_, _ = ctx.JSON(iris.Map{"message": "successful", "hash": hash})
 	}
 }

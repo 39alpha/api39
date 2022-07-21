@@ -34,7 +34,6 @@ func UpdateDNSLink(cfg *api39.Config, ipfshash string) error {
 	req.Header.Add("accept", "application/json")
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Authorization", "sso-key " + cfg.GoDaddy.Key + ":" + cfg.GoDaddy.Secret)
-	fmt.Println(req.Header)
 	if err != nil {
 		return err;
 	}

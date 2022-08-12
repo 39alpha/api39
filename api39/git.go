@@ -84,9 +84,9 @@ func UpdateGitRepo(url, path, branchname string) error {
 			return err
 		}
 
-		if analysis && git.MergeAnalysisFastForward != 0 {
+		if analysis&git.MergeAnalysisFastForward != 0 {
 			return fastForward(repo, branch)
-		} else if analysis && git.MergeAnalysisUpToDate != 0 {
+		} else if analysis&git.MergeAnalysisUpToDate != 0 {
 			return nil
 		} else {
 			return fmt.Errorf("cannot fastforward %s branch", branchname)

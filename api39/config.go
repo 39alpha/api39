@@ -70,6 +70,7 @@ func GenerateConfig(n int) error {
 	site := SiteConfig{
 		"https://github.com/39alpha/39alpharesearch.org",
 		"",
+		"",
 		hugopath,
 	}
 

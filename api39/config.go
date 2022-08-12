@@ -16,9 +16,10 @@ type StripeConfig struct {
 }
 
 type SiteConfig struct {
-	Repo string `json:"repo"`
-	Path string `json:"path"`
-	Hugo string `json:"hugo"`
+	Repo    string `json:"repo"`
+	Path    string `json:"path"`
+	DevPath string `json:"devpath"`
+	Hugo    string `json:"hugo"`
 }
 
 type IpfsConfig struct {

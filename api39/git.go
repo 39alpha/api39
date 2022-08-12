@@ -63,7 +63,7 @@ func analyzeForMerge(repo *git.Repository, branch *git.Branch) (git.MergeAnalysi
 	return analysis, nil
 }
 
-func UpdateGitRepo(url, path string) error {
+func UpdateGitRepo(url, path, branchname string) error {
 	if repo, err := git.OpenRepository(path); err != nil {
 		_, err = git.Clone(url, path, &git.CloneOptions{})
 		return err
@@ -74,7 +74,7 @@ func UpdateGitRepo(url, path string) error {
 			return err
 		}
 
-		branch, err := repo.LookupBranch("origin/main", git.BranchAll)
+		branch, err := repo.LookupBranch(branchname, git.BranchAll)
 		if err != nil {
 			return err
 		}
@@ -84,12 +84,12 @@ func UpdateGitRepo(url, path string) error {
 			return err
 		}
 
-		if analysis&git.MergeAnalysisFastForward != 0 {
+		if analysis && git.MergeAnalysisFastForward != 0 {
 			return fastForward(repo, branch)
-		} else if analysis&git.MergeAnalysisUpToDate != 0 {
+		} else if analysis && git.MergeAnalysisUpToDate != 0 {
 			return nil
 		} else {
-			return fmt.Errorf("cannot fastforward main branch")
+			return fmt.Errorf("cannot fastforward %s branch", branchname)
 		}
 	}
 }

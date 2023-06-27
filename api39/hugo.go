@@ -20,7 +20,7 @@ func RebuildWithHugo(hugo, path string) error {
 	return cmd.Run()
 }
 
-func RebuildWithMake(path string) error {
+func RebuildWithMake(path string, targets ...string) error {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -35,6 +35,6 @@ func RebuildWithMake(path string) error {
 		return err
 	}
 
-	cmd := exec.Command(mk)
+	cmd := exec.Command(mk, targets...)
 	return cmd.Run()
 }

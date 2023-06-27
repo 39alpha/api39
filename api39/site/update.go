@@ -121,7 +121,7 @@ func UpdateDevelopment(ctx iris.Context) {
 		return
 	}
 
-	if err := api39.RebuildWithMake(cfg.Site.DevPath); err != nil {
+	if err := api39.RebuildWithMake(cfg.Site.DevPath, "dev"); err != nil {
 		message := "failed to rebuild site"
 		log.Printf("%s: %v\n", message, err)
 		return

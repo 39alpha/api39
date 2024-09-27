@@ -13,16 +13,21 @@ import (
 )
 
 const (
-	godaddyapi = "https://api.godaddy.com/v1/domains/"
+	ddnsapi    = "https://api.cloudflare.com/client/v4/"
 	mainbranch = "origin/main"
 	devbranch  = "origin/dev"
 )
 
 func UpdateDNSLink(cfg *api39.Config, ipfshash string) error {
-	url := godaddyapi + cfg.Domain + "/records/TXT/_dnslink"
+	url := ddnsapi + "/zones/" + cfg.DDNS.ZoneId + "/dns_records/" + cfg.DDNS.RecordId
 
 	payload := []map[string]string{
-		map[string]string{"data": "dnslink=/ipfs/" + ipfshash},
+		map[string]string{
+			"name":    "_dnslink.39alpharesearch.org",
+			"content": "dnslink=/ipfs/" + ipfshash,
+			"type":    "TXT",
+			"ttl":     "600",
+		},
 	}
 	content, err := json.Marshal(payload)
 	if err != nil {
@@ -35,7 +40,7 @@ func UpdateDNSLink(cfg *api39.Config, ipfshash string) error {
 	req, err := http.NewRequest(http.MethodPut, url, data)
 	req.Header.Add("accept", "application/json")
 	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", "sso-key "+cfg.GoDaddy.Key+":"+cfg.GoDaddy.Secret)
+	req.Header.Add("Authorization", "Bearer "+cfg.DDNS.Token)
 	if err != nil {
 		return err
 	}

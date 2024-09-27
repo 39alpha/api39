@@ -2,7 +2,6 @@ package api39
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"os/exec"
 )
@@ -26,23 +25,24 @@ type IpfsConfig struct {
 	Url string `json:"url"`
 }
 
-type GoDaddyConfig struct {
-	Key    string `json:"key"`
-	Secret string `json:"secret"`
+type DDNSConfig struct {
+	Token    string `json:"token"`
+	ZoneId   string `json:"zone_id"`
+	RecordId string `json:"record_id"`
 }
 
 type Config struct {
-	Filename string        `json:"-"`
-	Apikey   string        `json:"apikey"`
-	Domain   string        `json:"domain"`
-	Site     SiteConfig    `json:"site"`
-	Ipfs     IpfsConfig    `json:"ipfs"`
-	Stripe   StripeConfig  `json:"stripe"`
-	GoDaddy  GoDaddyConfig `json:"godaddy"`
+	Filename string       `json:"-"`
+	Apikey   string       `json:"apikey"`
+	Domain   string       `json:"domain"`
+	Site     SiteConfig   `json:"site"`
+	Ipfs     IpfsConfig   `json:"ipfs"`
+	Stripe   StripeConfig `json:"stripe"`
+	DDNS     DDNSConfig   `json:"ddns"`
 }
 
 func ReadConfig(filename string) (*Config, error) {
-	blob, err := ioutil.ReadFile(filename)
+	blob, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func GenerateConfig(n int) error {
 
 	ipfs := IpfsConfig{"127.0.0.1:5001"}
 
-	godaddy := GoDaddyConfig{"", ""}
+	ddns := DDNSConfig{"", "", ""}
 
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "  ")
@@ -96,6 +96,6 @@ func GenerateConfig(n int) error {
 			site,
 			ipfs,
 			stripe,
-			godaddy,
+			ddns,
 		})
 }

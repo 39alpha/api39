@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	ddnsapi    = "https://api.cloudflare.com/client/v4/"
+	ddnsapi    = "https://api.cloudflare.com/client/v4"
 	mainbranch = "origin/main"
 	devbranch  = "origin/dev"
 )
@@ -21,14 +21,13 @@ const (
 func UpdateDNSLink(cfg *api39.Config, ipfshash string) error {
 	url := ddnsapi + "/zones/" + cfg.DDNS.ZoneId + "/dns_records/" + cfg.DDNS.RecordId
 
-	payload := []map[string]string{
-		map[string]string{
-			"name":    "_dnslink.39alpharesearch.org",
-			"content": "dnslink=/ipfs/" + ipfshash,
-			"type":    "TXT",
-			"ttl":     "600",
-		},
+	payload := map[string]string{
+		"name":    "_dnslink.39alpharesearch.org",
+		"content": "dnslink=/ipfs/" + ipfshash,
+		"type":    "TXT",
+		"ttl":     "600",
 	}
+
 	content, err := json.Marshal(payload)
 	if err != nil {
 		return err

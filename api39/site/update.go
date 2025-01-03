@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/39alpha/api39/api39"
-	"github.com/kataras/iris/v12"
+	"io"
 	"log"
 	"net/http"
 	"path/filepath"
 	"time"
+
+	"github.com/39alpha/api39/api39"
+	"github.com/kataras/iris/v12"
 )
 
 const (
@@ -48,7 +50,12 @@ func UpdateDNSLink(cfg *api39.Config, ipfshash string) error {
 	if err != nil {
 		return err
 	} else if res.StatusCode != 200 {
-		return fmt.Errorf("%s", res.Status)
+		body, err := io.ReadAll(res.Body)
+		if err != nil {
+			return fmt.Errorf("%s: %s", res.Status, string(body))
+		} else {
+			return fmt.Errorf("%s: %s", res.Status, "unknown error")
+		}
 	}
 
 	return nil
